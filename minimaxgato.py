@@ -158,8 +158,9 @@ def best_move(board, ai_player, hu_player):
         print("="*60 + "\n")
         return 4  # Centro del tablero
     
-    # Si quedan muy pocas casillas, no imprimir el árbol para ser más rápido
-    should_print = board.count(' ') <= 7  # Solo imprimir árbol cuando quedan 7 o menos casillas
+    # Si quedan muy pocas casillas, imprimir el árbol completo para fines educativos
+    # Caso contrario, solo imprimir la decisión final para evitar spam en consola
+    should_print = board.count(' ') <= 5  # Solo imprimir árbol cuando quedan 5 o menos casillas
     
     if should_print:
         print("\n" + "="*60)
@@ -177,7 +178,7 @@ def best_move(board, ai_player, hu_player):
         print_board_state(board, 0, "")
         print()
     else:
-        print(f"\nIA pensando... (evaluando {len(moves)} movimientos)")
+        print(f"\nIA pensando... (evaluando {len(moves)} movimientos con poda Alpha-Beta)")
     
     for move in moves:
         board[move] = ai_player
