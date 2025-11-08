@@ -66,9 +66,9 @@ def check_winner(board):
         return 'Tie'
     return None
 
-def minimax(board, depth, is_maximizing, ai_player, hu_player, print_tree=False):
+def minimax(board, depth, is_maximizing, ai_player, hu_player, alpha=-math.inf, beta=math.inf, print_tree=False):
     """
-    Algoritmo Minimax con visualización del árbol de estados
+    Algoritmo Minimax con poda Alpha-Beta y visualización del árbol de estados
     """
     indent = "  " * depth
     winner = check_winner(board)
@@ -99,7 +99,7 @@ def minimax(board, depth, is_maximizing, ai_player, hu_player, print_tree=False)
             board[move] = ai_player
             if print_tree:
                 print(f"{indent}│  ├─ Probando movimiento {move+1}:")
-            score = minimax(board, depth+1, False, ai_player, hu_player, print_tree)
+            score = minimax(board, depth+1, False, ai_player, hu_player, alpha, beta, print_tree)
             board[move] = ' '
             
             if print_tree:
@@ -107,6 +107,12 @@ def minimax(board, depth, is_maximizing, ai_player, hu_player, print_tree=False)
             
             if score > best_score:
                 best_score = score
+            alpha = max(alpha, best_score)
+            
+            if beta <= alpha:
+                if print_tree:
+                    print(f"{indent}│  │  └─ Poda Beta (β={beta} ≤ α={alpha})")
+                break
         
         if print_tree:
             print(f"{indent}│  └─ Mejor score MAX: {best_score}")
@@ -120,7 +126,7 @@ def minimax(board, depth, is_maximizing, ai_player, hu_player, print_tree=False)
             board[move] = hu_player
             if print_tree:
                 print(f"{indent}│  ├─ Probando movimiento {move+1}:")
-            score = minimax(board, depth+1, True, ai_player, hu_player, print_tree)
+            score = minimax(board, depth+1, True, ai_player, hu_player, alpha, beta, print_tree)
             board[move] = ' '
             
             if print_tree:
@@ -128,6 +134,12 @@ def minimax(board, depth, is_maximizing, ai_player, hu_player, print_tree=False)
             
             if score < best_score:
                 best_score = score
+            beta = min(beta, best_score)
+            
+            if beta <= alpha:
+                if print_tree:
+                    print(f"{indent}│  │  └─ Poda Alpha (β={beta} ≤ α={alpha})")
+                break
         
         if print_tree:
             print(f"{indent}│  └─ Mejor score MIN: {best_score}")
@@ -135,33 +147,60 @@ def minimax(board, depth, is_maximizing, ai_player, hu_player, print_tree=False)
 
 def best_move(board, ai_player, hu_player):
     """Encuentra el mejor movimiento para la IA e imprime el árbol de búsqueda"""
-    print("\n" + "="*60)
-    print("ÁRBOL DE BÚSQUEDA MINIMAX")
-    print("="*60)
+    
+    # Optimización: Si el tablero está vacío, jugar en el centro (posición 4)
+    # Esto evita calcular 362,880 estados en el primer movimiento
+    if board.count(' ') == 9:
+        print("\n" + "="*60)
+        print("PRIMER MOVIMIENTO - HEURÍSTICA")
+        print("="*60)
+        print("Tablero vacío detectado. Jugando en el centro (posición 5) - movimiento óptimo.")
+        print("="*60 + "\n")
+        return 4  # Centro del tablero
+    
+    # Si quedan muy pocas casillas, no imprimir el árbol para ser más rápido
+    should_print = board.count(' ') <= 7  # Solo imprimir árbol cuando quedan 7 o menos casillas
+    
+    if should_print:
+        print("\n" + "="*60)
+        print("ÁRBOL DE BÚSQUEDA MINIMAX CON PODA ALPHA-BETA")
+        print("="*60)
     
     best_score = -math.inf
     move_choice = None
     moves = available_moves(board)
+    alpha = -math.inf
+    beta = math.inf
     
-    print(f"Evaluando {len(moves)} movimientos posibles desde el estado actual:")
-    print_board_state(board, 0, "")
-    print()
+    if should_print:
+        print(f"Evaluando {len(moves)} movimientos posibles desde el estado actual:")
+        print_board_state(board, 0, "")
+        print()
+    else:
+        print(f"\nIA pensando... (evaluando {len(moves)} movimientos)")
     
     for move in moves:
         board[move] = ai_player
-        print(f"\n┌─ Evaluando movimiento en posición {move+1} (IA juega {ai_player}):")
-        score = minimax(board, 0, False, ai_player, hu_player, print_tree=True)
+        if should_print:
+            print(f"\n┌─ Evaluando movimiento en posición {move+1} (IA juega {ai_player}):")
+        score = minimax(board, 0, False, ai_player, hu_player, alpha, beta, print_tree=should_print)
         board[move] = ' '
         
-        print(f"└─ Score final para movimiento {move+1}: {score}")
+        if should_print:
+            print(f"└─ Score final para movimiento {move+1}: {score}")
         
         if score > best_score:
             best_score = score
             move_choice = move
+        
+        alpha = max(alpha, best_score)
     
-    print(f"\n{'='*60}")
-    print(f"DECISIÓN: Mejor movimiento = posición {move_choice+1}, score = {best_score}")
-    print(f"{'='*60}\n")
+    if should_print:
+        print(f"\n{'='*60}")
+        print(f"DECISIÓN: Mejor movimiento = posición {move_choice+1}, score = {best_score}")
+        print(f"{'='*60}\n")
+    else:
+        print(f"IA decidió: posición {move_choice+1} (score = {best_score})\n")
     
     return move_choice
 
